@@ -8,6 +8,8 @@
 [Urban Suite - Pollution](http://www.netlogoweb.org/launch#http://www.netlogoweb.org/assets/modelslib/Curricular%20Models/Urban%20Suite/Urban%20Suite%20-%20Pollution.nlogo).
 
 <br>
+### З отриманим кодом можно ознайомитися [Тут](Cod)
+<br>
 
 ### Внесені зміни у вихідну логіку моделі, за варіантом:
 
