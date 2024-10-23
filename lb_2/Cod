@@ -1,0 +1,157 @@
+globals [br-rt]
+
+breed [ people person ]
+breed [ trees tree ]
+
+turtles-own [ health sex]
+
+patches-own [
+  pollution
+  is-power-plant?
+  near
+]
+
+to setup
+  clear-all
+  
+  ;; шанс народження збільшено у 1.5 рази оскільки тільки для однієї статі + модифікатор за кількість станцій
+  set br-rt birth-rate * 1.6 + power-plants / 100 
+  
+  set-default-shape people "person"
+  set-default-shape trees "tree"
+
+  ask patches [
+    set pollution 0
+    set is-power-plant? false
+  ]
+
+  create-power-plants
+
+  ask patches [ pollute ]
+
+  create-people initial-population [
+    ;;set color black
+    setxy random-pxcor random-pycor
+    set health 5
+    
+    ifelse random-float 1 < 0.5 [
+      set sex "male"
+      set color blue
+      
+    ] [
+      set sex "female"
+      set color pink
+     ;; set health 0.1
+    ]
+  ]
+
+  reset-ticks
+end
+
+to go
+
+ if not any? people [ stop ]
+
+  ask people [
+    wander
+    ;;if count people < 2000 [ if sex = "female" [ reproduce ] ]
+    if sex = "female" [ reproduce ] 
+    maybe-plant
+    eat-pollution
+    maybe-die
+  ]
+
+  diffuse pollution 0.8
+
+  ask patches [ pollute ]
+
+  ask trees [
+    cleanup
+    maybe-die
+  ]
+
+  tick
+end
+
+to create-power-plants
+  ask n-of power-plants patches [
+    set is-power-plant? true
+  ]
+  mark-nearby-patches
+end
+
+to mark-nearby-patches
+  ;; Процедура для встановлення параметра "near" на патчах, в радіусі 4 от электрост.
+  ask patches with [is-power-plant?] [
+    ask patches in-radius 4 [
+      set near 1
+    ]
+  ]
+end
+
+to pollute  ;; patch procedure
+  if is-power-plant? [
+    set pcolor red
+    set pollution polluting-rate
+  ]
+  set pcolor scale-color red (pollution - .1) 5 0
+end
+
+to cleanup  ;; tree procedure
+  set pcolor green + 3
+  set pollution max (list 0 (pollution - 1))
+  ask neighbors [
+    set pollution max (list 0 (pollution - .5))
+  ]
+  set health health - 0.1
+end
+
+to wander  ;; person procedure
+  rt random-float 50
+  lt random-float 50
+  fd 1
+  set health health - 0.1
+end
+
+to reproduce  ;; person procedure if health > 2.5 and health < 4 and random-float 1 < br-rt
+   
+  if health > 4 and random-float 1 < br-rt [
+    hatch-people 1 [
+      set health 5
+      
+      ifelse random-float 1 < 0.5 [
+        set sex "male"
+        set color blue
+      ] [
+        set sex "female"
+        set color pink
+      ]
+    ]
+  ]
+end
+
+to maybe-plant  ;; person procedure
+  let p_rate_mod planting-rate
+  if near = 1 
+  [
+    set p_rate_mod planting-rate + 0.1
+  ]
+  if random-float 1 < p_rate_mod [ 
+    		hatch-trees 1 
+        [
+      		set health 5
+      		set color green
+    		]
+  		]
+  	
+end
+
+to eat-pollution  ;; person procedure
+  if pollution > 0.5 [
+    set health (health - (pollution / 10))
+  ]
+end
+
+to maybe-die  ;; die if you run out of health
+  if health <= 0 [ die ]
+end
